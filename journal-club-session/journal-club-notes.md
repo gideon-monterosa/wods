@@ -1,4 +1,4 @@
-# Journal Club Session
+# Journal Club Session Notes
 
 ## Tipps und Aufbau
 
@@ -61,8 +61,6 @@
   - Abhängigkeiten innerhalb von Zeilen und über Spalten hinweg werden effektiv
     erfasst.
 
-TODO architektur verstehen (evt infos im anderen paper) schema erstellen.
-
 ### In-Context Learning
 
 - Bei Inferenz wird der gesamte Datensatz (Trainings- und Testdaten) in einem
@@ -105,3 +103,35 @@ wie wird das modell in etapen trainiert und verwendet
   hochoptimierten Modellen (z. B. CatBoost) geringer sein.
 - Die Komplexität der Methode und der Vortrainierungsphase kann für manche
   Anwendungen eine Hürde darstellen.
+
+## Architektur
+
+### Eingabe
+
+Eingabe ganze Tabelle
+
+### Transformer Blöcke
+
+TabPFN verwendet 12x 2D TabPFN layer. Jeder dieser layer verwendet zwei
+parallele Attention Mechanismen und einen MLP als FFN.
+
+- 1D Feature-wise Attention
+- 1D Sample-wise Attention
+- Feedforward-Netzwerke (MLP-Schichten)
+- Normalisierungsschicht
+
+### MLP Schicht
+
+Am Ende wandelt eine MLP Schicht den Vektor in eine "piece-wise Constant" um.
+
+### Fragen
+
+- ICL Paper verstehen.
+- Bessere Darstellung für Architektur.
+- Kann ich das Modell für Speziallfälle selber "re-trainieren" oder "fine
+  tunen".
+- Kann das TabPFN Modell für grössere Datensätze so angepasst werden dass es
+  performanter wird.
+- Ist fine-tuning möglich / sinnvoll, was sind Bedingungen (Datenmenge, etc).
+- Warum ist die Architektur der Transformer Schicht so sinnvoll (parallele
+  attention Mechanismen, Anzahl Schichten).
