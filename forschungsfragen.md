@@ -16,6 +16,13 @@ Ergebnisse vorherzusagen, besser identifizieren als herkömmliche Methoden.
 - Visualisierungen verwenden, um zu analysieren, wie jedes Modell
   Feature-Beziehungen versteht
 
+**Notizen:**
+
+- Statistisch anspruchsvoll
+- Auf bestimmte Abhängigkeiten beschränken
+- Die Untersuchte Art von Zusammenhang muss relevant sein
+- Mögliche abhängigkeitsszenarion von unabhängigen Variablen
+
 ## T2: Effektivität von Ensembles
 
 **Frage:** Warum funktionieren TabPFNs mehrere Modelle gut zusammen und welche
@@ -33,6 +40,11 @@ erkennen, die sich beim Kombinieren ergänzen und die Vorhersagen verbessern.
 - Leistung testen, wenn bestimmte Vorverarbeitungsschritte entfernt werden
 - Herausfinden, welche Modellkombinationen den grössten Leistungsschub bringen
 
+**Notizen:**
+
+- Konkreter werden
+- Mehr auf TabPFN beziehen
+
 ## T3: Domänenanpassung durch Fine-Tuning
 
 **Frage:** Welche Fine-Tuning-Strategie eignet sich am besten, um TabPFN an
@@ -49,3 +61,12 @@ synthetischen Trainingsverteilung.
   vergleichen
 - Untersuchen, wie viele domänenspezifische Daten für effektives Fine-Tuning
   benötigt werden
+
+**Notizen:**
+
+- Datensatz ist sehr wichtig
+- Sehr grosser Datensatz
+- 10'000 zur seite für default TabPFN
+- grösserer Chunk für fine tunign verwenden
+- Auf dem fine tuned Modell die gleichen 10'000 verwenden
+- mit zb random forest vergelichen auf grossem datensatz
