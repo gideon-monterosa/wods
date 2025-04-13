@@ -67,12 +67,6 @@ spezifische Domänen bei minimaler Trainingsdatenmenge und Rechenaufwand.
 
 **Experiment:**
 
-- Diverse Fine-Tuning-Methoden auf TabPFN anwenden
-- Verschiedene Fine-Tuning-Methoden für domänenspezifische Datensätze
-  vergleichen
-- Untersuchen, wie viele domänenspezifische Daten für effektives Fine-Tuning
-  benötigt werden
-
 1. Auswahl und Vorbereitung domänenspezifischer Datensätze
 
    - Identifikation von 3-5 grossen domänenspezifischen Datensätzen (>100.000
