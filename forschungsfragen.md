@@ -2,59 +2,70 @@
 
 ## T1: Feature-Interaktionen
 
-**Frage:** Wie gut erkennt TabPFN Zusammenhänge zwischen mehreren Features im
-Vergleich zu Baummodellen wie CatBoost?
+**Frage:** Inwiefern erkennt TabPFN komplexe Feature-Interaktionen im Vergleich
+zu Baummodellen wie CatBoost, und bei welchen spezifischen Typen von
+Feature-Interaktionen zeigt es Vorteile?.
 
-**Hypothese:** TabPFN kann Situationen, in denen Features zusammenarbeiten, um
-Ergebnisse vorherzusagen, besser identifizieren als herkömmliche Methoden.
+**Hypothese:** TabPFN kann aufgrund seiner Transformer-Architektur und
+In-Context-Learning-Fähigkeiten bestimmte Arten von Feature-Interaktionen besser
+erkennen und modellieren als baumbasierte Modelle wie CatBoost
 
-**Experimente:**
+**Experiment:**
 
-- Testdatensätze erstellen, bei denen das Ergebnis von Kombinationen aus 2, 3
-  oder 4 Features abhängt
-- Vergleichen, wie genau TabPFN und CatBoost diese Ergebnisse vorhersagen
-- Visualisierungen verwenden, um zu analysieren, wie jedes Modell
-  Feature-Beziehungen versteht
+1. Erstellung von synthetischen Datensätzen mit kontrollierten
+   Feature-Interaktionen
 
-**Notizen:**
+   - Die Datensätze enthalten die folgenden Arten von Interaktionen
+     - Polynomiale Interaktion (quadratisch, kubisch)
+     - Logische Interaktionen (XOR, AND, OR)
+     - Konditionale Abhängikeiten (Schwellenwerte)
+     - Räumliche Distanzen (Euklidische Distanz, Manhattan-Distanz)
+   - Die Datensätze umfassen drei Grössenklassen: klein (200 Samples), mittel
+     (1000 Samples) und gross (5000 Samples)
+   - Für jede Interaktionsart werden Datensätze mit 2, 3 und 4 interagierenden
+     Features erstellt
+   - Das Verhältnis von relevanten zu irrelevanten Features wird variiert (1:0,
+     1:1, 1:2, 1:5)
+   - Rauschstufen von 0% (kein Rauschen), 10% und 20% werden hinzugefügt
 
-- Statistisch anspruchsvoll
-- Auf bestimmte Abhängigkeiten beschränken
-- Die Untersuchte Art von Zusammenhang muss relevant sein
-- Mögliche abhängigkeitsszenarion von unabhängigen Variablen
+2. Evaluation
 
-## T2: Effektivität von Ensembles
+   - Neben TabPFN und CatBoost wird ein lineares Modell als Baseline verwendet
+   - Performance-Vergleich (AUC, Accuracy) mit zunehmender Komplexität der
+     Interaktionen
+   - Bessere Performance deutet darauf hin, dass die Interaktionen besser
+     erkannt wurden
+   - Analyse der benötigten Datenmenge, um Interaktionsmuster zu erlernen
+   - Analyse wie stark irrelevante Features die Performance beeinflussen
+   - Analyse der Robustheit gegenüber Rauschen
 
-**Frage:** Warum funktionieren TabPFNs mehrere Modelle gut zusammen und welche
-Kombinationen funktionieren am besten?
+3. Interpretation
 
-**Hypothese:** Verschiedene Vorverarbeitungsmethoden und Datenpermutationen
-führen dazu, dass einzelne TabPFN-Modelle unterschiedliche Muster in den Daten
-erkennen, die sich beim Kombinieren ergänzen und die Vorhersagen verbessern.
+   - Verwendung von SHAP-Werten, um zu analysieren, wie beide Modelle
+     Interaktionen bewerten
+     - SHAP-Werte (SHapley Additive exPlanations) bieten einen mathematisch
+       fundierten Ansatz, um zu verstehen, wie Modelle Interaktionen bewerten
+   - Visualisierung von 2D-Entscheidungsgrenzen für relevante Feature-Paare
+     - Entscheidungsgrenzen zeigen, wie ein Modell den Datenraum in verschiedene
+       Klassen einteilt
+   - Erstellung von Partial Dependence Plots für interagierende Features
+     - PDPs zeigen, wie die durchschnittliche Vorhersage eines Modells sich
+       ändert, wenn ein oder mehrere Features variiert werden, während alle
+       anderen konstant bleiben.
 
-**Experimente:**
+## T2: Domänenanpassung durch Fine-Tuning
 
-- TabPFN default und Post-Hoc-Ensemble (PHE) vergleichen.
-- Messen, wie ähnlich oder unterschiedlich die Vorhersagen der einzelnen Modelle
-  im Ensemble sind
-- Leistung testen, wenn bestimmte Vorverarbeitungsschritte entfernt werden
-- Herausfinden, welche Modellkombinationen den grössten Leistungsschub bringen
+**Frage:** Inwiefern ermöglichen verschiedene Adapter-basierte
+Fine-Tuning-Strategien eine effiziente Anpassung von TabPFN an
+domänenspezifische Datensätze, und welche Adapter-Architektur zeigt die beste
+Performance-Steigerung im Vergleich zum unveränderten Basismodell?
 
-**Notizen:**
+**Hypothese:** Adapter-basiertes Fine-Tuning, das nur kleine,
+aufgabenspezifische Module hinzufügt und anpasst, während die vortrainierten
+Gewichte eingefroren bleiben, ermöglicht eine effiziente Anpassung von TabPFN an
+spezifische Domänen bei minimaler Trainingsdatenmenge und Rechenaufwand.
 
-- Konkreter werden
-- Mehr auf TabPFN beziehen
-
-## T3: Domänenanpassung durch Fine-Tuning
-
-**Frage:** Welche Fine-Tuning-Strategie eignet sich am besten, um TabPFN an
-spezifische Datendomänen anzupassen?
-
-**Hypothese:** Verschiedene Fine-Tuning-Ansätze zeigen unterschiedliche
-Effektivität, abhängig von der Ähnlichkeit zwischen der Zieldomäne und der
-synthetischen Trainingsverteilung.
-
-**Experimente:**
+**Experiment:**
 
 - Diverse Fine-Tuning-Methoden auf TabPFN anwenden
 - Verschiedene Fine-Tuning-Methoden für domänenspezifische Datensätze
@@ -62,11 +73,54 @@ synthetischen Trainingsverteilung.
 - Untersuchen, wie viele domänenspezifische Daten für effektives Fine-Tuning
   benötigt werden
 
-**Notizen:**
+1. Auswahl und Vorbereitung domänenspezifischer Datensätze
 
-- Datensatz ist sehr wichtig
-- Sehr grosser Datensatz
-- 10'000 zur seite für default TabPFN
-- grösserer Chunk für fine tunign verwenden
-- Auf dem fine tuned Modell die gleichen 10'000 verwenden
-- mit zb random forest vergelichen auf grossem datensatz
+   - Identifikation von 3-5 grossen domänenspezifischen Datensätzen (>100.000
+     Samples) aus unterschiedlichen Bereichen:
+
+     - Malicious URLs Datensatz
+     - Medizinische Daten
+     - Finanzdaten
+     - Industrielle Sensordaten
+     - Konsumentenverhalten
+
+   - Jeder Datensatz wird aufgeteilt in:
+
+     - 10.000 Samples als Testset für Standard-TabPFN
+     - 80.000+ Samples für Fine-Tuning und Validierung
+     - 10.000 Samples als finales Evaluierungsset
+
+2. Implementierung verschiedener Adapter-Architekturen
+
+   - Bottleneck-Adapter: Kleine Feed-Forward-Netzwerke parallel zu den
+     Hauptschichten
+     - Variationen mit unterschiedlichen Reduktionsfaktoren (8, 16, 32)
+   - Prefix-Tuning: Trainierbare Präfix-Token am Eingang jeder
+     Transformer-Schicht
+     - Variationen mit unterschiedlicher Präfix-Länge (5%, 10%, 20% der
+       Sequenzlänge)
+   - LoRA (Low-Rank Adaptation): Niedrigrangige Anpassungen der
+     Aufmerksamkeitsmatrizen
+     - Variationen mit unterschiedlichen Rangwerten (r=4, r=8, r=16)
+
+3. Fine-Tuning-Protokoll
+
+   - Progressive Skalierung der Trainingsdatenmenge:
+     - 1.000, 5.000, 10.000, 50.000 Samples
+   - Es werden nur Adapter-Parameter trainiert, während das Basismodell
+     vollständig eingefroren wird
+
+4. Evaluation
+
+   - Performance-Vergleich:
+     - Standard-TabPFN (Baseline ohne Fine-Tuning)
+     - Verschiedene Adapter-Varianten
+     - State-of-the-art domänenspezifische Modelle (z.B. XGBoost, LightGBM)
+   - Evaluierungsmetriken:
+     - Klassifikation: AUC, F1-Score, Accuracy
+     - Regression: RMSE, R2-Score
+
+5. Analyse und Interpretation
+   - Lernkurven in Abhängigkeit von Trainingsdatenmenge für verschiedene
+     Adapter-Typen
+   - Performance-Vergleich über verschiedene Domänen hinweg

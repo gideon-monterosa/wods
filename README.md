@@ -1,7 +1,15 @@
-# WODS - Workshop Data Science
+# WODS - Workshop Data Science TabPFN
 
-## Quellen
+## Lektüre
 
-- [TabPFN Paper](https://www.nature.com/articles/s41586-024-08328-6)
-- [TabPFN GitHub](https://github.com/PriorLabs/TabPFN)
-- [Artikel der Universität Freiburg](https://uni-freiburg.de/neues-ki-modell-tabpfn-ermoeglicht-schnellere-und-praezisere-vorhersagen-auf-kleinen-tabellendatensaetzen/)
+Die für diese Arbeit verwendete Lektüre wurde in dieser Zotero Gruppe gesammelt.
+
+[Zotero](https://www.zotero.org/groups/5950824/wods-tabpfn/library)
+
+Der Code von TabPFN ist auf GitHub verfügbar.
+
+[TabPFN GitHub](https://github.com/PriorLabs/TabPFN)
+
+## Forschungsfragen
+
+[Forschungsfragen](./forschungsfragen.md)
