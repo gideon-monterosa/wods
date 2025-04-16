@@ -12,4 +12,4 @@ Der Code von TabPFN ist auf GitHub verfügbar.
 
 ## Forschungsfragen
 
-[Forschungsfragen](./forschungsfragen.md)
+[Forschungsfragen](./docs/forschungsfragen.md)
