@@ -9,7 +9,7 @@ def _():
     import marimo as mo
     import pandas as pd
     import altair as alt
-    from synthetic_data_generator import SyntheticDataGenerator
+    from feature_interaction.synthetic_data_generator import SyntheticDataGenerator
 
     return SyntheticDataGenerator, alt, mo, pd
 
