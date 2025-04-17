@@ -2,6 +2,7 @@
 .idea/
 __pycache__/
 *.egg-info/
+catboost_info/
 
 # temp
 /src/fine_tune/

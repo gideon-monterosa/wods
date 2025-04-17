@@ -1,4 +1,0 @@
-marimo
-numpy
-pandas
-altair
