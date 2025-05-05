@@ -53,6 +53,17 @@ erkennen und modellieren als baumbasierte Modelle wie CatBoost
        ändert, wenn ein oder mehrere Features variiert werden, während alle
        anderen konstant bleiben.
 
+**notes:**
+
+- Ausgangsdatensatz
+- Ein Beispiel für Regression und eines für Klassifikation
+- Feature Interaktionen nicht abgebildet so im moment
+- Freiheitsgrad
+- herausfinden ob TabPFN overfitted
+- regularisierungsgrad
+- Zusammenhang Freiheitsgrad / Feature interaktion / regularisierung /
+  overfitting
+
 ## T2: Domänenanpassung durch Fine-Tuning
 
 **Frage:** Inwiefern ermöglichen verschiedene Adapter-basierte

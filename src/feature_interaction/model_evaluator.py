@@ -1,11 +1,10 @@
-import numpy as np
-
 from sklearn.metrics import roc_auc_score, accuracy_score
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import LabelEncoder
 from sklearn.linear_model import LogisticRegression
 from catboost import CatBoostClassifier
 from tabpfn import TabPFNClassifier
+import pandas as pd
 
 
 class ModelEvaluator:
@@ -25,7 +24,7 @@ class ModelEvaluator:
             ),
         }
 
-    def evaluate_single_dataset(self, X, y):
+    def evaluate(self, X, y):
         le = LabelEncoder()
         y = le.fit_transform(y)
         X_train, X_test, y_train, y_test = train_test_split(
@@ -33,6 +32,7 @@ class ModelEvaluator:
         )
 
         results = []
+        overall_strengths = {}
 
         for model_name, model_fn in self.models.items():
             model = model_fn()
@@ -56,4 +56,4 @@ class ModelEvaluator:
                 }
             )
 
-        return results
+        return results, overall_strengths

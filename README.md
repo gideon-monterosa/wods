@@ -13,3 +13,9 @@ Der Code von TabPFN ist auf GitHub verfügbar.
 ## Forschungsfragen
 
 [Forschungsfragen](./docs/forschungsfragen.md)
+
+## Module Builden
+
+```bash
+python ./setup.py
+```

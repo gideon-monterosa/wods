@@ -53,28 +53,47 @@ def _(mo):
         options={"2": 2, "3": 3, "4": 4}, value="2", label="features"
     )
 
-    mo.hstack([dataset_type, n_samples, n_features])
-    return dataset_type, n_features, n_samples
+    irrelevant_ratio = mo.ui.radio(
+        options={"1:0": 0, "1:1": 1, "1:2": 2, "1:5": 5}, value="1:0", label="irrelevant features ratio"
+    )
+
+    noise_level = mo.ui.radio(
+        options={"0%": 0.0, "10%": 0.1, "20%": 0.2}, value="0%", label="noise level"
+    )
+
+    mo.hstack([dataset_type, n_samples, n_features, irrelevant_ratio, noise_level])
+    return dataset_type, irrelevant_ratio, n_features, n_samples, noise_level
 
 
 @app.cell
-def _(SyntheticDataGenerator, alt, dataset_type, n_features, n_samples, pd):
+def _(
+    SyntheticDataGenerator,
+    alt,
+    dataset_type,
+    irrelevant_ratio,
+    n_features,
+    n_samples,
+    noise_level,
+):
     generator = SyntheticDataGenerator()
 
-    X_df, y_series, _ = generator.generate_dataset(
-        dataset_type.value, n_samples.value, n_features.value, return_df=True
+    df, X, y, _ = generator.generate_dataset(
+        dataset_type.value,
+        n_samples.value,
+        n_features.value,
+        irrelevant_ratio.value,
+        noise_level.value,
     )
-    df = pd.concat([X_df, y_series], axis=1)
 
     chart = (
         alt.Chart(df)
         .mark_point()
-        .encode(x=X_df.columns[0], y=X_df.columns[1], color=alt.Color("target:N"))
+        .encode(x=df.columns[0], y=df.columns[1], color=alt.Color("target:N"))
         .properties(title=dataset_type.value)
     )
 
     chart
-    return X_df, chart, df, generator, y_series
+    return X, chart, df, generator, y
 
 
 @app.cell
@@ -84,16 +103,18 @@ def _(mo):
 
 
 @app.cell
-def _(ModelEvaluator, dataset_type, generator, n_features, n_samples):
+def _(ModelEvaluator, X, mo, y):
     model_evaluator = ModelEvaluator()
+    output = {}
 
-    X, y, _ = generator.generate_dataset(
-        dataset_type.value, n_samples.value, n_features.value, return_df=False
-    )
+    def run_evaluation(_):
+        output, overall_strengths = model_evaluator.evaluate(X=X, y=y)
 
-    model_evaluator.evaluate_single_dataset(X=X, y=y)
+        mo.output.append(button)
+        mo.output.append(output)
 
-    return X, model_evaluator, y
+    button = mo.ui.button(label="Run Evaluation", on_click=run_evaluation)
+    return button, model_evaluator, output, run_evaluation
 
 
 if __name__ == "__main__":

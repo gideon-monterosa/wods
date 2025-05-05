@@ -137,7 +137,6 @@ class SyntheticDataGenerator:
         n_interact,
         irrelevant_ratio=0,
         noise_level=0.0,
-        return_df=False,
     ):
         if interaction_type not in self.interaction_types:
             raise ValueError(
@@ -168,17 +167,16 @@ class SyntheticDataGenerator:
             "noise_level": noise_level,
         }
 
-        if return_df:
-            feature_names = []
-            for i in range(n_features):
-                if i < n_interact:
-                    feature_names.append(f"F{i+1}_relevant")
-                else:
-                    feature_names.append(f"F{i+1}_irrelevant")
+        feature_names = []
+        for i in range(n_features):
+            if i < n_interact:
+                feature_names.append(f"F{i+1}_relevant")
+            else:
+                feature_names.append(f"F{i+1}_irrelevant")
 
-            X_df = pd.DataFrame(X)
-            X_df.columns = feature_names
-            y_series = pd.Series(y.astype(int), name="target")
-            return X_df, y_series, feature_info
+        X_df = pd.DataFrame(X)
+        X_df.columns = feature_names
+        y_series = pd.Series(y.astype(int), name="target")
+        df = pd.concat([X_df, y_series], axis=1)
 
-        return X, y.astype(int), feature_info
+        return df, X, y.astype(int), feature_info
