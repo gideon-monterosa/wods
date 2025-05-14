@@ -1,8 +1,8 @@
 from setuptools import setup, find_packages
 
 setup(
-    name="feature_interaction",
+    name="wods_tabpfn",
     version="0.1",
-    packages=find_packages(where="src"),
     package_dir={"": "src"},
+    packages=find_packages(where="src"),
 )

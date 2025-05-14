@@ -180,3 +180,66 @@ class SyntheticDataGenerator:
         df = pd.concat([X_df, y_series], axis=1)
 
         return df, X, y.astype(int), feature_info
+
+    def generate_complex_synthetic_dataset(
+        self,
+        n_samples,
+    ):
+        n_features = 25
+
+        X = np.random.randn(n_samples, n_features) * 5  # normal distribution
+        X = np.random.uniform(
+            low=-10, high=10, size=(n_samples, n_features)
+        )  # uniform distribution
+
+        y = np.zeros(n_samples)
+
+        # 1. Polynomiale Interaktion (quadratisch)
+        poly_interaction = X[:, 0] * X[:, 1] * X[:, 2]
+        poly_contribution = 2.5 * poly_interaction**2
+
+        # 2. Logische Interaktion (XOR-ähnlich)
+        logical_features = X[:, 3:6] > 0
+        logical_contribution = 1.5 * (
+            (logical_features[:, 0] & logical_features[:, 1] & ~logical_features[:, 2])
+            | (
+                ~logical_features[:, 0]
+                & ~logical_features[:, 1]
+                & logical_features[:, 2]
+            )
+        )
+
+        # 3. Räumliche Interaktion (Euclidean-ähnlich)
+        center = np.array([0.5, -0.5, 0.0])
+        distances = np.sqrt(np.sum((X[:, 6:9] - center) ** 2, axis=1))
+        spatial_contribution = -3.0 * np.exp(-distances)
+
+        # 4. Bedingte Schwellenwert-Interaktion
+        cond_A = X[:, 9] > 0.5
+        cond_B = X[:, 10] < -0.2
+        cond_C = np.abs(X[:, 11]) < 0.3
+        cond_D = X[:, 12] > X[:, 9]
+
+        conditional_contribution = np.zeros(n_samples)
+        conditional_contribution[cond_A & cond_B] = 4.0  # Wenn A und B
+        conditional_contribution[cond_A & ~cond_B & cond_C] = (
+            2.0  # Wenn A und C aber nicht B
+        )
+        conditional_contribution[~cond_A & cond_D] = -2.5  # Wenn D aber nicht A
+        conditional_contribution[~cond_A & ~cond_D & cond_C] = (
+            1.0  # Wenn C aber weder A noch D
+        )
+
+        # 5. Lineare Effekte
+        linear_contribution = 0.8 * X[:, 13] - 1.2 * X[:, 14] + 0.5 * X[:, 15]
+
+        # Kombiniere alle Beiträge
+        y = (
+            poly_contribution
+            + logical_contribution
+            + spatial_contribution
+            + conditional_contribution
+            + linear_contribution
+        )
+
+        return X, y.astype(int)
