@@ -182,23 +182,36 @@ class SyntheticDataGenerator:
         return df, X, y.astype(int), feature_info
 
     def generate_complex_synthetic_dataset(
-        self,
-        n_samples,
+        self, n_samples, irrelevant_ratio=0, noise_level=0.0
     ):
-        n_features = 25
+        """
+        Erzeugt einen komplexen synthetischen Datensatz für Regressionsaufgaben mit
+        verschiedenen Feature-Interaktionen, optionalen irrelevanten Features und Rauschen.
 
-        X = np.random.randn(n_samples, n_features) * 5  # normal distribution
-        X = np.random.uniform(
-            low=-10, high=10, size=(n_samples, n_features)
-        )  # uniform distribution
+        Args:
+            n_samples: Anzahl der zu erzeugenden Datenpunkte
+            irrelevant_ratio: Verhältnis von irrelevanten zu relevanten Features (0 bis 1)
+            noise_level: Stärke des Rauschens (0 bis 1)
+            random_state: Zufallsseed (falls None, wird self.random_state verwendet)
 
+        Returns:
+            X: Feature-Matrix
+            y: Zielwerte (kontinuierlich)
+        """
+        np.random.seed(self.random_state)
+
+        n_relevant = 16
+        n_irrelevant = int(n_relevant * irrelevant_ratio)
+        n_features = n_relevant + n_irrelevant
+
+        X = np.random.uniform(low=-10, high=10, size=(n_samples, n_features))
         y = np.zeros(n_samples)
 
-        # 1. Polynomiale Interaktion (quadratisch)
+        # Polynomiale Interaktion (quadratisch)
         poly_interaction = X[:, 0] * X[:, 1] * X[:, 2]
         poly_contribution = 2.5 * poly_interaction**2
 
-        # 2. Logische Interaktion (XOR-ähnlich)
+        # Logische Interaktion (XOR-ähnlich)
         logical_features = X[:, 3:6] > 0
         logical_contribution = 1.5 * (
             (logical_features[:, 0] & logical_features[:, 1] & ~logical_features[:, 2])
@@ -209,7 +222,7 @@ class SyntheticDataGenerator:
             )
         )
 
-        # 3. Räumliche Interaktion (Euclidean-ähnlich)
+        # Räumliche Interaktion
         center = np.array([0.5, -0.5, 0.0])
         distances = np.sqrt(np.sum((X[:, 6:9] - center) ** 2, axis=1))
         spatial_contribution = -3.0 * np.exp(-distances)
@@ -221,19 +234,14 @@ class SyntheticDataGenerator:
         cond_D = X[:, 12] > X[:, 9]
 
         conditional_contribution = np.zeros(n_samples)
-        conditional_contribution[cond_A & cond_B] = 4.0  # Wenn A und B
-        conditional_contribution[cond_A & ~cond_B & cond_C] = (
-            2.0  # Wenn A und C aber nicht B
-        )
-        conditional_contribution[~cond_A & cond_D] = -2.5  # Wenn D aber nicht A
-        conditional_contribution[~cond_A & ~cond_D & cond_C] = (
-            1.0  # Wenn C aber weder A noch D
-        )
+        conditional_contribution[cond_A & cond_B] = 4.0
+        conditional_contribution[cond_A & ~cond_B & cond_C] = 2.0
+        conditional_contribution[~cond_A & cond_D] = -2.5
+        conditional_contribution[~cond_A & ~cond_D & cond_C] = 1.0
 
-        # 5. Lineare Effekte
+        # Lineare Effekte
         linear_contribution = 0.8 * X[:, 13] - 1.2 * X[:, 14] + 0.5 * X[:, 15]
 
-        # Kombiniere alle Beiträge
         y = (
             poly_contribution
             + logical_contribution
@@ -241,5 +249,10 @@ class SyntheticDataGenerator:
             + conditional_contribution
             + linear_contribution
         )
+
+        if noise_level > 0:
+            y_std = np.std(y)
+            noise = np.random.normal(0, y_std * noise_level, n_samples)
+            y += noise
 
         return X, y.astype(int)
