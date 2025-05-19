@@ -6,14 +6,15 @@ app = marimo.App(width="medium")
 
 @app.cell
 def _():
+    import os
+    import numpy as np
     import marimo as mo
     import pandas as pd
     import altair as alt
+    import seaborn as sns
+    import matplotlib.pyplot as plt
 
-    from feature_interaction.synthetic_data_generator import SyntheticDataGenerator
-    from feature_interaction.model_evaluator import ModelEvaluator
-
-    return ModelEvaluator, SyntheticDataGenerator, alt, mo, pd
+    return alt, mo, np, os, pd, plt, sns
 
 
 @app.cell
@@ -30,91 +31,73 @@ def _(mo):
 
 @app.cell
 def _(mo):
-    dataset_type = mo.ui.radio(
+    selected_dataset = mo.ui.radio(
         options={
-            "Polynominal Quadratic": "polynomial_quadratic",
-            "Polynomial Cubic": "polynomial_cubic",
-            "Logical xor": "logical_xor",
-            "Logical and": "logical_and",
-            "Logical or": "logical_or",
-            "Conditional Threshold": "conditional_threshold",
-            "Spatial Euclidean": "spatial_euclidean",
-            "Spatial Manhattan": "spatial_manhattan",
-        },
-        value="Polynominal Quadratic",
-        label="Type",
+            "Complex Dataset (size 200, noise 0%, irrelevant ratio 1:0)": "complex_dataset_n200_noise0_irrelevant0.csv",
+            "Complex Dataset (size 1000, noise 0%, irrelevant ratio 1:0)": "complex_dataset_n1000_noise0_irrelevant0.csv",
+            "Complex Dataset (size 1000, noise 0%, irrelevant ratio 1:1)": "complex_dataset_n1000_noise0_irrelevant1.csv",
+            "Complex Dataset (size 1000, noise 0%, irrelevant ratio 1:2)": "complex_dataset_n1000_noise0_irrelevant2.csv",
+            "Complex Dataset (size 1000, noise 0%, irrelevant ratio 1:5)": "complex_dataset_n1000_noise0_irrelevant5.csv",
+            "Complex Dataset (size 1000, noise 10%, irrelevant ratio 1:0)": "complex_dataset_n1000_noise10_irrelevant0.csv",
+            "Complex Dataset (size 1000, noise 20%, irrelevant ratio 1:0)": "complex_dataset_n1000_noise20_irrelevant0.csv",
+            "Complex Dataset (size 5000, noise 0%, irrelevant ratio 1:0)": "complex_dataset_n5000_noise0_irrelevant0.csv",
+            "Complex Dataset (size 25000, noise 0%, irrelevant ratio 1:0)": "complex_dataset_n25000_noise0_irrelevant0.csv",
+            "Complex Dataset (size 1000, noise 10%, irrelevant ratio 1:2)": "complex_dataset_n1000_noise10_irrelevant2.csv"
+        }, 
+        label="Selected Dataset"
     )
 
-    n_samples = mo.ui.radio(
-        options={"200": 200, "1000": 1000, "5000": 5000}, value="1000", label="samples"
-    )
-
-    n_features = mo.ui.radio(
-        options={"2": 2, "3": 3, "4": 4}, value="2", label="features"
-    )
-
-    irrelevant_ratio = mo.ui.radio(
-        options={"1:0": 0, "1:1": 1, "1:2": 2, "1:5": 5}, value="1:0", label="irrelevant features ratio"
-    )
-
-    noise_level = mo.ui.radio(
-        options={"0%": 0.0, "10%": 0.1, "20%": 0.2}, value="0%", label="noise level"
-    )
-
-    mo.hstack([dataset_type, n_samples, n_features, irrelevant_ratio, noise_level])
-    return dataset_type, irrelevant_ratio, n_features, n_samples, noise_level
+    selected_dataset
+    return (selected_dataset,)
 
 
 @app.cell
-def _(
-    SyntheticDataGenerator,
-    alt,
-    dataset_type,
-    irrelevant_ratio,
-    n_features,
-    n_samples,
-    noise_level,
-):
-    generator = SyntheticDataGenerator()
+def _(os, pd, selected_dataset):
+    data_dir = "./data/synthetic_datasets/"
+    results_dir = "./data/results/feature_interactions/"
 
-    df, X, y, _ = generator.generate_dataset(
-        dataset_type.value,
-        n_samples.value,
-        n_features.value,
-        irrelevant_ratio.value,
-        noise_level.value,
+    def load_dataset(dataset_filename):
+        filepath = os.path.join(data_dir, dataset_filename)
+        df = pd.read_csv(filepath)
+        return df
+
+    def load_evaluation_results(dataset_filename):
+        result_filename = f"cv_results_{dataset_filename.replace('.csv', '')}.csv"
+        filepath = os.path.join(results_dir, result_filename)
+    
+        if os.path.exists(filepath):
+            return pd.read_csv(filepath)
+        else:
+            return pd.DataFrame({"message": ["Keine Evaluierungsergebnisse gefunden. Führe zuerst die Evaluierung durch."]})
+
+    dataset_df = load_dataset(selected_dataset.value)
+    evaluation_df = load_evaluation_results(selected_dataset.value)
+
+    return (
+        data_dir,
+        dataset_df,
+        evaluation_df,
+        load_dataset,
+        load_evaluation_results,
+        results_dir,
     )
-
-    chart = (
-        alt.Chart(df)
-        .mark_point()
-        .encode(x=df.columns[0], y=df.columns[1], color=alt.Color("target:N"))
-        .properties(title=dataset_type.value)
-    )
-
-    chart
-    return X, chart, df, generator, y
 
 
 @app.cell
-def _(mo):
-    mo.md(r"""## Evaluate""")
+def _(dataset_df):
+    dataset_df
     return
 
 
 @app.cell
-def _(ModelEvaluator, X, mo, y):
-    model_evaluator = ModelEvaluator()
-    output = {}
+def _(evaluation_df):
+    evaluation_df
+    return
 
-    def run_evaluation(_):
-        output, overall_strengths = model_evaluator.evaluate(X=X, y=y)
 
-        mo.output.append(button)
-        mo.output.append(output)
-
-    button = mo.ui.button(label="Run Evaluation", on_click=run_evaluation)
-    return button, model_evaluator, output, run_evaluation
+@app.cell
+def _():
+    return
 
 
 if __name__ == "__main__":

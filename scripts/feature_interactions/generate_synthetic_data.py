@@ -5,8 +5,9 @@ import os
 from feature_interaction.synthetic_data_generator import SyntheticDataGenerator
 
 os.makedirs("./data/", exist_ok=True)
+os.makedirs("./data/synthetic_datasets/", exist_ok=True)
 
-# Initialisiere den Datengenerator
+dir = "./data/synthetic_datasets/"
 data_generator = SyntheticDataGenerator()
 
 # 1. Datensätze ohne Noise und irrelevante Features für verschiedene Größen
@@ -20,7 +21,7 @@ for sample_size in sample_sizes:
     df = pd.DataFrame(X, columns=feature_names)
     df["target"] = y
 
-    filepath = f"./data/complex_dataset_n{sample_size}_noise0_irrelevant0.csv"
+    filepath = f"{dir}/complex_dataset_n{sample_size}_noise0_irrelevant0.csv"
     df.to_csv(filepath, index=False)
     print(f"Datensatz gespeichert: {filepath}")
 
@@ -36,7 +37,7 @@ for noise_level in noise_levels:
 
     # Konvertiere Noise-Level zu ganzzahligen Werten (0.1 → 10, 0.2 → 20)
     noise_int = int(noise_level * 100)
-    filepath = f"./data/complex_dataset_n1000_noise{noise_int}_irrelevant0.csv"
+    filepath = f"{dir}/complex_dataset_n1000_noise{noise_int}_irrelevant0.csv"
     df.to_csv(filepath, index=False)
     print(f"Datensatz gespeichert: {filepath}")
 
@@ -51,7 +52,7 @@ for irrelevant_ratio in irrelevant_ratios:
     df = pd.DataFrame(X, columns=feature_names)
     df["target"] = y
 
-    filepath = f"./data/complex_dataset_n1000_noise0_irrelevant{irrelevant_ratio}.csv"
+    filepath = f"{dir}/complex_dataset_n1000_noise0_irrelevant{irrelevant_ratio}.csv"
     df.to_csv(filepath, index=False)
     print(f"Datensatz gespeichert: {filepath}")
 
@@ -64,6 +65,6 @@ feature_names = [f"feature_{i+1}" for i in range(X.shape[1])]
 df = pd.DataFrame(X, columns=feature_names)
 df["target"] = y
 
-filepath = f"./data/complex_dataset_n1000_noise10_irrelevant2.csv"
+filepath = f"{dir}/complex_dataset_n1000_noise10_irrelevant2.csv"
 df.to_csv(filepath, index=False)
 print(f"Datensatz gespeichert: {filepath}")
