@@ -209,11 +209,11 @@ class SyntheticDataGenerator:
 
         # Polynomiale Interaktion (quadratisch)
         poly_interaction = X[:, 0] * X[:, 1] * X[:, 2]
-        poly_contribution = 2.5 * poly_interaction**2
+        poly_contribution = 0.0003 * poly_interaction**2
 
         # Logische Interaktion (XOR-ähnlich)
         logical_features = X[:, 3:6] > 0
-        logical_contribution = 1.5 * (
+        logical_contribution = 100 * (
             (logical_features[:, 0] & logical_features[:, 1] & ~logical_features[:, 2])
             | (
                 ~logical_features[:, 0]
@@ -223,9 +223,10 @@ class SyntheticDataGenerator:
         )
 
         # Räumliche Interaktion
-        center = np.array([0.5, -0.5, 0.0])
-        distances = np.sqrt(np.sum((X[:, 6:9] - center) ** 2, axis=1))
-        spatial_contribution = -3.0 * np.exp(-distances)
+        center = np.mean(X[:, 6:9], axis=0)
+        distances = np.linalg.norm(X[:, 6:9] - center, axis=1)
+        alpha = -np.log(1 / 99) / distances.max()
+        spatial_contribution = 1 + 150 * np.exp(-alpha * distances)
 
         # 4. Bedingte Schwellenwert-Interaktion
         cond_A = X[:, 9] > 0.5
@@ -234,13 +235,19 @@ class SyntheticDataGenerator:
         cond_D = X[:, 12] > X[:, 9]
 
         conditional_contribution = np.zeros(n_samples)
-        conditional_contribution[cond_A & cond_B] = 4.0
-        conditional_contribution[cond_A & ~cond_B & cond_C] = 2.0
-        conditional_contribution[~cond_A & cond_D] = -2.5
+        conditional_contribution[cond_A & cond_B] = 40.0
+        conditional_contribution[cond_A & ~cond_B & cond_C] = 20.0
+        conditional_contribution[~cond_A & cond_D] = -25.0
         conditional_contribution[~cond_A & ~cond_D & cond_C] = 1.0
 
         # Lineare Effekte
-        linear_contribution = 0.8 * X[:, 13] - 1.2 * X[:, 14] + 0.5 * X[:, 15]
+        linear_contribution = 4.8 * X[:, 13] - 2.2 * X[:, 14] + 3.5 * X[:, 15]
+
+        print("poly_contribution:", poly_contribution)
+        print("logical_contribution:", logical_contribution)
+        print("spatial_contribution:", spatial_contribution)
+        print("conditional_contribution:", conditional_contribution)
+        print("linear_contribution:", linear_contribution)
 
         y = (
             poly_contribution
