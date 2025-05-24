@@ -11,7 +11,8 @@ dir = "./data/synthetic_datasets/"
 data_generator = SyntheticDataGenerator()
 
 # 1. Datensätze ohne Noise und irrelevante Features für verschiedene Größen
-sample_sizes = [200, 1000, 5000, 25000]
+# Datensätze grösser als 5000 führen dazu, dass mein mac abstürtzt (zu wenig ram)
+sample_sizes = [200, 1000, 5000]
 for sample_size in sample_sizes:
     X, y = data_generator.generate_complex_synthetic_dataset(
         n_samples=sample_size, irrelevant_ratio=0, noise_level=0.0
