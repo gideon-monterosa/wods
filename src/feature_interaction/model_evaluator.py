@@ -22,7 +22,7 @@ class ModelEvaluator:
         self.random_state = random_state
 
         self.classifier_models = {
-            "TabPFN": lambda: TabPFNClassifier(),
+            "TabPFN": lambda: TabPFNClassifier(ignore_pretraining_limits=True),
             "CatBoost": lambda: CatBoostClassifier(
                 iterations=100,
                 depth=6,
@@ -36,7 +36,7 @@ class ModelEvaluator:
         }
 
         self.regressor_models = {
-            "TabPFN": lambda: TabPFNRegressor(),
+            "TabPFN": lambda: TabPFNRegressor(ignore_pretraining_limits=True),
             "RandomForest": lambda: RandomForestRegressor(
                 n_estimators=100, max_depth=10, random_state=random_state
             ),
@@ -96,6 +96,7 @@ class ModelEvaluator:
             self.regressor_models.items(), desc="Modelle evaluieren"
         ):
             model = model_fn()
+            tqdm.write(f"Aktuell: {model_name}")
 
             scoring = {
                 "r2": "r2",
@@ -122,6 +123,9 @@ class ModelEvaluator:
             mae_std = np.std(-cv_results["test_neg_mae"])
             r2_std = np.std(cv_results["test_r2"])
 
+            fit_time_mean = np.mean(cv_results["fit_time"])
+            score_time_mean = np.mean(cv_results["score_time"])
+
             results.append(
                 {
                     "model": model_name,
@@ -132,6 +136,8 @@ class ModelEvaluator:
                     "mse_std": mse_std,
                     "mae_std": mae_std,
                     "r2_std": r2_std,
+                    "fit_time_mean": fit_time_mean,
+                    "score_time_mean": score_time_mean,
                 }
             )
 

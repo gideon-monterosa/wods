@@ -28,9 +28,9 @@ for csv_file in tqdm(csv_files, desc="Datensätze verarbeiten"):
     print(f"Auswertung für Datensatz: {csv_file}")
     print(f"{'='*80}")
     print(
-        f"{'Modell':<20} {'MSE':<12} {'RMSE':<12} {'MAE':<12} {'R²':<12} {'MSE Std':<12} {'MAE Std':<12} {'R² Std':<12} {'FitTime μ':<12} {'FitTime σ':<12}"
+        f"{'Modell':<20} {'MSE':<12} {'RMSE':<12} {'MAE':<12} {'R²':<12} {'MSE Std':<12} {'MAE Std':<12} {'R² Std':<12} {'FitTime':<12} {'ScoreTime':<12}"
     )
-    print(f"{'-'*124}")
+    print(f"{'-'*122}")
 
     for result in results:
         model_name = result["model"]
@@ -42,10 +42,10 @@ for csv_file in tqdm(csv_files, desc="Datensätze verarbeiten"):
         mae_std = result.get("mae_std", 0)
         r2_std = result.get("r2_std", 0)
         fit_time_mean = result.get("fit_time_mean", 0)
-        fit_time_std = result.get("fit_time_std", 0)
+        score_time_mean = result.get("score_time_mean", 0)
 
         print(
-            f"{model_name:<20} {mse:<12.4f} {rmse:<12.4f} {mae:<12.4f} {r2:<12.4f} {mse_std:<12.4f} {mae_std:<12.4f} {r2_std:<12.4f} {fit_time_mean:<12.4f} {fit_time_std:<12.4f}"
+            f"{model_name:<20} {mse:<12.4f} {rmse:<12.4f} {mae:<12.4f} {r2:<12.4f} {mse_std:<12.4f} {mae_std:<12.4f} {r2_std:<12.4f} {fit_time_mean:<12.4f} {score_time_mean:<12.4f}"
         )
 
     results_df = pd.DataFrame(results)
