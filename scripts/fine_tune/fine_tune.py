@@ -49,7 +49,6 @@ def freeze_original_parameters(model):
     for param in model.parameters():
         param.requires_grad = False
 
-    # Double-check by iterating through all modules
     for name, module in model.named_modules():
         if not isinstance(module, BottleneckAdapter):
             for param in module.parameters():
@@ -75,7 +74,6 @@ def verify_frozen_parameters(model):
     print(f"Trainable parameters: {len(trainable_params)}")
     print(f"Frozen parameters: {len(frozen_params)}")
 
-    # Check that trainable params are only adapters
     for param_name in trainable_params:
         if "adapter" not in param_name:
             print(f"WARNING: Non-adapter parameter is trainable: {param_name}")
@@ -98,49 +96,41 @@ def add_adapters_to_tabpfn(model, reduction_factor=8, dropout=0.1):
     if not isinstance(model, PerFeatureTransformer):
         raise TypeError("Model must be a PerFeatureTransformer instance")
 
-    # Step 1: Freeze ALL parameters first
     freeze_original_parameters(model)
 
-    # Step 2: Store original forward methods
     for i, layer in enumerate(model.transformer_encoder.layers):
         layer._original_forward = layer.forward
 
     def modified_layer_forward(self, state, single_eval_pos=None, **kwargs):
-        """Modified forward pass that includes adapter modules."""
-        # Call original forward
         output = self._original_forward(state, single_eval_pos, **kwargs)
+        if hasattr(self, "adapter") and self.training:
 
-        # Now apply adapters (these will have gradients)
-        if (
-            hasattr(self, "adapter") and self.training
-        ):  # Only apply adapters during training
-            # Reshape if needed (handle 4D tensors: batch, seq, features, dim)
-            original_shape = output.shape
-            if len(output.shape) == 4:
-                batch, seq, features, dim = output.shape
-                output = output.reshape(-1, dim)
-                output = self.adapter(output)
-                output = output.reshape(original_shape)
+            def apply_adapter(x):
+                shape = x.shape
+                if len(shape) == 4:
+                    x = x.reshape(-1, shape[-1])
+                    x = self.adapter(x)
+                    x = x.reshape(shape)
+                else:
+                    x = self.adapter(x)
+                return x
+
+            if isinstance(output, tuple):
+                out0 = apply_adapter(output[0])
+                output = (out0,) + output[1:]
             else:
-                output = self.adapter(output)
-
+                output = apply_adapter(output)
         return output
 
-    # Step 3: Add adapters to each transformer layer
     for i, layer in enumerate(model.transformer_encoder.layers):
-        # Determine the hidden dimension
         if hasattr(layer, "mlp") and hasattr(layer.mlp, "linear1"):
             hidden_dim = layer.mlp.linear1.in_features
         else:
             hidden_dim = model.ninp
 
-        # Add adapter
         layer.adapter = BottleneckAdapter(hidden_dim, reduction_factor, dropout)
-
-        # Replace forward method
         layer.forward = types.MethodType(modified_layer_forward, layer)
 
-    # Step 4: Verify that only adapter parameters are trainable
     verify_frozen_parameters(model)
 
     return model
@@ -162,11 +152,10 @@ def get_adapter_parameters(model):
     for name, module in model.named_modules():
         if isinstance(module, BottleneckAdapter):
             for param_name, param in module.named_parameters():
-                param.requires_grad = True  # Enable gradients only for adapters
+                param.requires_grad = True
                 adapter_params.append(param)
                 adapter_param_names.append(f"{name}.{param_name}")
 
-    # Verify no other parameters are trainable
     all_trainable = [
         name for name, param in model.named_parameters() if param.requires_grad
     ]
@@ -197,7 +186,6 @@ class TabPFNWithAdapters:
         self.device = base_model.device_
         self.adapters_added = False
 
-        # Store original model state for verification
         self.original_state_dict = copy.deepcopy(base_model.model_.state_dict())
 
     def add_adapters(self, reduction_factor=8, dropout=0.1):
@@ -207,7 +195,6 @@ class TabPFNWithAdapters:
             self.adapters_added = True
             self.adapter_params = get_adapter_parameters(self.base_model.model_)
 
-            # Verify original parameters haven't changed
             self._verify_original_weights_unchanged()
 
             print(f"\nAdded {len(self.adapter_params)} adapter parameter groups")
@@ -243,10 +230,6 @@ class TabPFNWithAdapters:
         if not self.adapters_added:
             raise RuntimeError("Adapters not added. Call add_adapters() first.")
 
-        # Double-check: freeze all non-adapter parameters
-        freeze_original_parameters(self.base_model.model_)
-
-        # Prepare data
         X_train_tensor = torch.FloatTensor(X_train).to(self.device)
         y_train_tensor = torch.FloatTensor(y_train).to(self.device)
 
@@ -256,14 +239,12 @@ class TabPFNWithAdapters:
         dataset = TensorDataset(X_train_tensor, y_train_tensor)
         dataloader = DataLoader(dataset, batch_size=batch_size, shuffle=True)
 
-        # Setup optimizer - ONLY with adapter parameters
         print(
             f"\nSetting up optimizer with {len(self.adapter_params)} adapter parameters only."
         )
         optimizer = optim.AdamW(self.adapter_params, lr=lr, weight_decay=weight_decay)
         scheduler = optim.lr_scheduler.CosineAnnealingLR(optimizer, epochs)
 
-        # Training loop
         for epoch in range(epochs):
             self.base_model.model_.train()
             total_loss = 0
@@ -272,23 +253,19 @@ class TabPFNWithAdapters:
             for batch_idx, (batch_X, batch_y) in enumerate(progress_bar):
                 optimizer.zero_grad()
 
-                # Use a small context for efficiency
                 context_size = min(100, len(X_train_tensor))
                 X_train_context = X_train_tensor[:context_size]
                 y_train_context = y_train_tensor[:context_size]
 
-                # Prepare data in the format TabPFN expects
-                # According to the forward method, we can use: model(train_x, train_y, test_x)
                 train_x = X_train_context.unsqueeze(1)  # Add sequence dimension
                 train_y = y_train_context.unsqueeze(1)  # Add sequence dimension
                 test_x = batch_X.unsqueeze(1)  # Add sequence dimension
 
-                # Forward pass through the model using the correct calling convention
                 with torch.cuda.amp.autocast(enabled=False):
-                    # TabPFN expects (train_x, train_y, test_x) as positional arguments
-                    outputs = self.base_model.model_(train_x, train_y, test_x)
+                    outputs = self.base_model.model_(
+                        train_x=train_x, train_y=train_y, test_x=test_x
+                    )
 
-                # Extract logits/predictions
                 if isinstance(outputs, dict):
                     if self.task_type == "classification":
                         logits = outputs.get("standard", outputs)
@@ -300,22 +277,17 @@ class TabPFNWithAdapters:
                     else:
                         predictions = outputs
 
-                # Calculate loss
                 if self.task_type == "classification":
-                    # Remove the sequence dimension for loss calculation
                     logits = logits.squeeze(1) if logits.dim() > 2 else logits
                     loss = nn.CrossEntropyLoss()(logits, batch_y)
                 else:
                     predictions = predictions.squeeze()
                     loss = nn.MSELoss()(predictions, batch_y)
 
-                # Backward pass - only adapter parameters will be updated
                 loss.backward()
 
-                # Clip gradients for stability
                 torch.nn.utils.clip_grad_norm_(self.adapter_params, max_norm=1.0)
 
-                # Verify gradients are only in adapter parameters (check once)
                 if epoch == 0 and batch_idx == 0:
                     self._verify_gradients()
 
@@ -328,12 +300,10 @@ class TabPFNWithAdapters:
             avg_loss = total_loss / len(dataloader)
             print(f"Epoch {epoch+1}/{epochs}, Average Loss: {avg_loss:.4f}")
 
-            # Validation
             if X_val is not None and y_val is not None:
                 val_score = self.evaluate(X_val, y_val)
                 print(f"Validation Score: {val_score:.4f}")
 
-        # Final verification
         print("\nTraining complete. Verifying original weights unchanged...")
         self._verify_original_weights_unchanged()
 
@@ -402,7 +372,6 @@ class TabPFNWithAdapters:
         print(f"Loaded adapter weights from {path}")
 
 
-# Test function with additional verification
 def test_with_verification():
     print("Testing Classification Fine-tuning with Weight Freezing Verification...")
 
@@ -412,27 +381,24 @@ def test_with_verification():
         X, y, test_size=0.2, random_state=42
     )
 
-    # Create and fit base model
     classifier = TabPFNClassifier(
-        device="cuda" if torch.cuda.is_available() else "cpu", n_estimators=1
+        device="cuda" if torch.cuda.is_available() else "cpu",
+        n_estimators=1,
+        memory_saving_mode=False,
     )
     classifier.fit(X_train[:100], y_train[:100])
 
-    # Store original parameters for comparison
     original_params = {}
     for name, param in classifier.model_.named_parameters():
         original_params[name] = param.clone().detach()
 
-    # Create wrapper and add adapters
     wrapper = TabPFNWithAdapters(classifier, task_type="classification")
     wrapper.add_adapters(reduction_factor=8, dropout=0.1)
 
-    # Evaluate before fine-tuning
     print("\nBefore fine-tuning:")
     score_before = wrapper.evaluate(X_test, y_test)
     print(f"Test Accuracy: {score_before:.4f}")
 
-    # Fine-tune
     wrapper.fine_tune(
         X_train[:200],
         y_train[:200],
@@ -443,13 +409,11 @@ def test_with_verification():
         lr=1e-3,
     )
 
-    # Evaluate after fine-tuning
     print("\nAfter fine-tuning:")
     score_after = wrapper.evaluate(X_test, y_test)
     print(f"Test Accuracy: {score_after:.4f}")
     print(f"Improvement: {score_after - score_before:.4f}")
 
-    # Verify original parameters haven't changed
     print("\n" + "=" * 50)
     print("FINAL VERIFICATION: Checking all original parameters...")
     all_unchanged = True
