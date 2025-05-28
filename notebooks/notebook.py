@@ -125,7 +125,7 @@ def _(df, np, plt):
 
 
 @app.cell
-def _(df, plot_polinomial2):
+def _(df):
     def _():
         import numpy as np
         import matplotlib.pyplot as plt
@@ -157,7 +157,26 @@ def _(df, plot_polinomial2):
         plt.suptitle("Polynomiale Beziehung: Feature vs. Beitrag mit quadratischer Trendlinie", fontsize=16)
         return plt.gca()
 
-    plot_polinomial2()
+    _()
+    return
+
+
+@app.cell
+def _(mo):
+    mo.md(
+        r"""
+        $$
+        a = \text{feature}_3 > 0 \\
+        b = \text{feature}_3 > 0 \\
+        c = \text{feature}_3 > 0 \\
+        \text{contrib} =
+        \begin{cases}
+        100, & \text{wenn}\ (a \land b \land \lnot c)\ \lor\ (\lnot a \land \lnot b \land c) \\
+        0, & \text{sonst}
+        \end{cases}
+        $$
+        """
+    )
     return
 
 
@@ -166,10 +185,9 @@ def _(itertools, np, plt):
     def _():
         combinations = np.array(list(itertools.product([0, 1], repeat=3)))
         labels = [f"{a}{b}{c}" for a, b, c in combinations]
-        # Die Logik von deinem Datensatz:
         contrib = ((combinations[:,0] & combinations[:,1] & ~combinations[:,2]) | 
                    (~combinations[:,0] & ~combinations[:,1] & combinations[:,2])) * 100
-    
+
         plt.bar(labels, contrib)
         plt.xlabel("Kombinationen X3 X4 X5 (>0 als 1, sonst 0)")
         plt.ylabel("Logischer Beitrag")
@@ -187,10 +205,10 @@ def _(X, df, np, plt):
         distances = np.linalg.norm(X[:, 6:9] - center, axis=1)
         alpha = -np.log(1 / 99) / distances.max()
         spatial_contribution = 1 + 150 * np.exp(-alpha * distances)
-    
+
         fig = plt.figure(figsize=(8, 6))
         ax = fig.add_subplot(111, projection='3d')
-    
+
         sc = ax.scatter(
             df["feature_7"],
             df["feature_8"],
@@ -200,25 +218,25 @@ def _(X, df, np, plt):
             alpha=0.7,
             vmin=1, vmax=50
         )
-    
+
         ax.set_title("Räumliche Interaktion (skaliert 1–100) – Abstand zum Mittelwertszentrum")
         ax.set_xlabel("feature_7")
         ax.set_ylabel("feature_8")
         ax.set_zlabel("feature_9")
-    
+
         ax.set_xlim([-10, 10])
         ax.set_ylim([-10, 10])
         ax.set_zlim([-10, 10])
-    
+
         fig.colorbar(sc, label="Beitrag (1–100)")
-    
+
         ax.scatter(*center, color='black', s=80, label="Zentrum (Mittelwert)", marker='x')
         ax.legend()
-    
+
         plt.tight_layout()
-    
+
         return plt.gca()
-    
+
     _()
     return
 
@@ -228,7 +246,7 @@ def _(Digraph, Image, io, np, plt):
     def _():
         dot = Digraph(comment='Conditional Contribution Logic')
         dot.attr(rankdir='TB', size='8,8', nodesep='1', ranksep='0.75')
-    
+
         decision_style = {'shape': 'ellipse', 'style': 'filled', 'fillcolor': '#dbeafe', 'fontsize': '14', 'fontname': 'Arial', 'color': '#2563eb'}
         leaf_styles = {
             'high':   {'shape': 'box', 'style': 'filled,bold', 'fillcolor': '#bbf7d0', 'fontsize': '14', 'fontname': 'Arial', 'color': '#16a34a'},
@@ -236,19 +254,19 @@ def _(Digraph, Image, io, np, plt):
             'neg':    {'shape': 'box', 'style': 'filled,bold', 'fillcolor': '#fecaca', 'fontsize': '14', 'fontname': 'Arial', 'color': '#dc2626'},
             'zero':   {'shape': 'box', 'style': 'filled',      'fillcolor': '#e5e7eb', 'fontsize': '14', 'fontname': 'Arial', 'color': '#6b7280'},
         }
-    
+
         dot.node('A', 'X9 > 0.5?', **decision_style)
         dot.node('B', 'X10 < -0.2?', **decision_style)
         dot.node('C1', '|X11| < 0.3?', **decision_style)
         dot.node('C2', '|X11| < 0.3?', **decision_style)
         dot.node('D', 'X12 > X9?', **decision_style)
-    
+
         dot.node('E', '40', **leaf_styles['high'])
         dot.node('F', '20', **leaf_styles['mid'])
         dot.node('G', '-25', **leaf_styles['neg'])
         dot.node('H', '1', **leaf_styles['mid'])
         dot.node('I', '0', **leaf_styles['zero'])
-    
+
         dot.edge('A', 'B', 'Ja', color='#22c55e', fontcolor='#22c55e', penwidth='2', fontsize='13')
         dot.edge('B', 'E', 'Ja', color='#22c55e', fontcolor='#22c55e', penwidth='2', fontsize='13')
         dot.edge('B', 'C1', 'Nein', color='#64748b', fontcolor='#64748b', penwidth='2', fontsize='13')
@@ -259,39 +277,39 @@ def _(Digraph, Image, io, np, plt):
         dot.edge('C2', 'H', 'Ja', color='#22c55e', fontcolor='#22c55e', penwidth='2', fontsize='13')
         dot.edge('C1', 'I', 'Nein', color='#64748b', fontcolor='#64748b', penwidth='2', fontsize='13')
         dot.edge('C2', 'I', 'Nein', color='#64748b', fontcolor='#64748b', penwidth='2', fontsize='13')
-    
+
         graph_png = dot.pipe(format='png')
         graph_img = Image.open(io.BytesIO(graph_png))
-    
+
         x9 = np.linspace(-2, 2, 200)
         x10 = np.linspace(-2, 2, 200)
         X9, X10 = np.meshgrid(x9, x10)
         X11 = 0
         X12 = 0
-    
+
         cond_A = X9 > 0.5
         cond_B = X10 < -0.2
         cond_C = np.abs(X11) < 0.3
         cond_D = X12 > X9
-    
+
         contribution = np.zeros_like(X9)
         contribution[cond_A & cond_B] = 40.0
         contribution[cond_A & ~cond_B & cond_C] = 20.0
         contribution[~cond_A & cond_D] = -25.0
         contribution[~cond_A & ~cond_D & cond_C] = 1.0
-    
+
         fig, axes = plt.subplots(1, 2, figsize=(13, 6))
-    
+
         axes[0].imshow(graph_img)
         axes[0].axis('off')
         axes[0].set_title('Entscheidungsbaum\n(konditionale Logik)')
-    
+
         c = axes[1].contourf(X9, X10, contribution, levels=[-30, 0, 1, 20, 40, 45], cmap="viridis", alpha=0.85)
         fig.colorbar(c, ax=axes[1], label="Beitrag")
         axes[1].set_xlabel("X9")
         axes[1].set_ylabel("X10")
         axes[1].set_title("Conditional Contribution Heatmap\n(X11=0, X12=0)")
-    
+
         plt.tight_layout()
         return plt.gca()
 
@@ -306,9 +324,9 @@ def _(X, np, plt):
         coefs = [4.8, -2.2, 3.5]
         X_linear = X[:, 13:16]
         linear_contribution = 4.8 * X_linear[:,0] - 2.2 * X_linear[:,1] + 3.5 * X_linear[:,2]
-    
+
         fig, axes = plt.subplots(1, 3, figsize=(18, 5), sharey=True)
-    
+
         for i, ax in enumerate(axes):
             xi = X_linear[:, i]
             sc = ax.scatter(xi, linear_contribution, c=linear_contribution, cmap="coolwarm", alpha=0.7)
@@ -321,7 +339,7 @@ def _(X, np, plt):
                 ax.set_ylabel("linear_contribution", fontsize=13)
             ax.set_title(f"{features[i]} vs. linear_contribution")
             ax.legend()
-    
+
         cbar = fig.colorbar(sc, ax=axes, orientation='vertical', fraction=0.02, pad=0.03)
         cbar.set_label("linear_contribution (Farbcodierung)", fontsize=13)
         plt.suptitle("Lineare Beziehung: Feature vs. Beitrag mit Trendlinie und Farblegende", fontsize=16)
@@ -338,58 +356,171 @@ def _(mo):
 
 
 @app.cell
-def _(evaluation_df):
-    evaluation_df
-    return
+def _():
+    def _():
+        import glob
+        import re
+        import pandas as pd
 
+        files = glob.glob("./data/results/feature_interactions/cv_results_complex_dataset_*.csv")
 
-@app.cell
-def _(evaluation_df, plt, sns):
-    plt.figure(figsize=(8,5))
-    sns.barplot(x='model', y='r2', data=evaluation_df)
-    plt.title('R² Score je Modell')
-    plt.ylabel('R² Score')
-    plt.xlabel('Modell')
-    plt.ylim(0, 1)
-    plt.tight_layout()
-    plt.gca()
+        dfs = []
+        for file in files:
+            match = re.search(r'n(\d+)_noise(\d+)_irrelevant(\d+)', file)
+            if match:
+                n_samples = int(match.group(1))
+                noise = int(match.group(2))
+                irr = int(match.group(3))
+            else:
+                n_samples, noise, irr = 0, 0, 0
 
-    return
+            df = pd.read_csv(file)
+            df['n_samples'] = n_samples
+            df['noise'] = noise
+            df['irrelevant'] = irr
+            dfs.append(df)
+
+        return pd.concat(dfs, ignore_index=True)
+
+    all_evaluations_df = _()
+    return (all_evaluations_df,)
 
 
 @app.cell
 def _(df, evaluation_df, np, plt):
     def _():
-        if 'target' in df.columns:
-            y = df['target'].values
-        else:
-            y = np.zeros(len(evaluation_df))
-
+        y = df['target'].values
         rmse = evaluation_df['rmse'].values
         norm_rmse = rmse / (y.max() - y.min())
-        neg_norm_rmse = -norm_rmse
+        neg_norm_rmse = 1 - norm_rmse
         r2 = evaluation_df['r2'].values
         model_names = evaluation_df['model'].tolist()
         x = np.arange(len(model_names))
 
         bar_width = 0.4
-        fig, ax1 = plt.subplots(figsize=(10,6))
+        fig, ax = plt.subplots(figsize=(10,6))
 
-        b1 = ax1.bar(x - bar_width/2, r2, width=bar_width, color='tab:blue', label='R² Score')
-        b2 = ax1.bar(x + bar_width/2, neg_norm_rmse, width=bar_width, color='tab:orange', label='- normalized RMSE')
+        b1 = ax.bar(x - bar_width/2, r2, width=bar_width, color='tab:blue', label='R² Score')
+        b2 = ax.bar(x + bar_width/2, neg_norm_rmse, width=bar_width, color='tab:orange', label='1 - normalized RMSE')
 
-        ax1.set_xticks(x)
-        ax1.set_xticklabels(model_names)
-        ax1.set_ylabel('Score')
-        ax1.set_ylim(-1.1, 1.1)
-        ax1.set_title('R² Score und negativer normalisierter RMSE pro Modell')
-        ax1.legend()
+        ax.set_xticks(x)
+        ax.set_xticklabels(model_names)
+        ax.set_ylabel('Score')
+        ax.set_ylim(0, 1)
+        ax.set_title('R² Score und 1 - normalisierter RMSE pro Modell')
+        ax.legend()
         plt.tight_layout()
-        return plt.show()
+        return plt.gca()
 
 
     _()
     return
+
+
+@app.cell
+def _(all_evaluations_df, plt, sns):
+    df_noise = all_evaluations_df[
+        (all_evaluations_df['n_samples'] == 1000) &
+        (all_evaluations_df['irrelevant'] == 0) &
+        (all_evaluations_df['model'].str.lower().isin(['tabpfn', 'catboostregressor']))
+    ]
+
+    plt.figure(figsize=(8,6))
+    sns.lineplot(data=df_noise, x="noise", y="r2", hue="model", marker="o")
+    plt.title("Modellrobustheit gegenüber Rauschen (R²-Score, n=1000, irrelevant=0)")
+    plt.ylabel("R² Score")
+    plt.xlabel("Rauschlevel [%]")
+    plt.ylim(0, 1)
+    plt.tight_layout()
+    plt.show()
+
+    return (df_noise,)
+
+
+@app.cell
+def _(all_evaluations_df, plt, sns):
+    df_irr = all_evaluations_df[
+        (all_evaluations_df['n_samples'] == 1000) &
+        (all_evaluations_df['noise'] == 0) &
+        (all_evaluations_df['model'].str.lower().isin(['tabpfn', 'catboostregressor']))
+    ]
+
+    plt.figure(figsize=(8,6))
+    sns.lineplot(data=df_irr, x="irrelevant", y="r2", hue="model", marker="o")
+    plt.title("Robustheit gegenüber irrelevanten Features (R²-Score, n=1000, noise=0)")
+    plt.ylabel("R² Score")
+    plt.xlabel("Anzahl irrelevanter Features")
+    plt.ylim(0, 1)
+    plt.tight_layout()
+    plt.gca()
+
+    return (df_irr,)
+
+
+@app.cell
+def _(mo):
+    mo.md(r"""# T2 - Fine Tuning""")
+    return
+
+
+@app.cell
+def _(Digraph, Image, io, plt):
+    dot = Digraph('Transformer', format='png')
+    dot.attr(rankdir='LR', fontsize='20')
+
+    dot.node('Input')
+    dot.node('Embedding')
+    dot.node('Positional Encoding')
+    dot.node('Encoder Stack')
+    dot.node('Decoder Stack')
+    dot.node('Output')
+
+    dot.edges([
+        ('Input', 'Embedding'),
+        ('Embedding', 'Positional Encoding'),
+        ('Positional Encoding', 'Encoder Stack'),
+        ('Encoder Stack', 'Decoder Stack'),
+        ('Decoder Stack', 'Output'),
+    ])
+
+    with dot.subgraph(name='cluster_encoder') as c:
+        c.attr(label='Encoder Stack', style='rounded', color='lightgrey')
+        c.node('E_Multi-Head Attention', shape='box')
+        c.node('E_Add & Norm', shape='box')
+        c.node('E_Feed Forward', shape='box')
+        c.node('E_Add & Norm2', shape='box')
+        c.edges([
+            ('E_Multi-Head Attention', 'E_Add & Norm'),
+            ('E_Add & Norm', 'E_Feed Forward'),
+            ('E_Feed Forward', 'E_Add & Norm2')
+        ])
+
+    with dot.subgraph(name='cluster_decoder') as c:
+        c.attr(label='Decoder Stack', style='rounded', color='lightblue')
+        c.node('D_Masked Multi-Head Attention', shape='box')
+        c.node('D_Add & Norm', shape='box')
+        c.node('D_Multi-Head Attention 2', shape='box')
+        c.node('D_Add & Norm2', shape='box')
+        c.node('D_Feed Forward', shape='box')
+        c.node('D_Add & Norm3', shape='box')
+        c.edges([
+            ('D_Masked Multi-Head Attention', 'D_Add & Norm'),
+            ('D_Add & Norm', 'D_Multi-Head Attention 2'),
+            ('D_Multi-Head Attention 2', 'D_Add & Norm2'),
+            ('D_Add & Norm2', 'D_Feed Forward'),
+            ('D_Feed Forward', 'D_Add & Norm3'),
+        ])
+
+    graph_bytes = dot.pipe(format='png')
+    img = Image.open(io.BytesIO(graph_bytes))
+
+    plt.figure(figsize=(10, 7))
+    plt.imshow(img)
+    plt.axis('off')
+    plt.title("TabPFN Architektur (Graphviz)")
+    plt.tight_layout()
+    plt.show()
+    return c, dot, graph_bytes, img
 
 
 if __name__ == "__main__":
