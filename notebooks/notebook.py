@@ -443,81 +443,38 @@ def _():
 
 
 @app.cell
-def _(np, pd, plt):
-    from matplotlib.patches import FancyBboxPatch
+def _(evaluation_df, np, plt):
 
     def _():
-        evaluation_data = {
-            'model': ['CatBoostRegressor', 'TabPFN', 'RandomForest', 'LinearRegression'],
-            'r2': [0.605, 0.41, 0.30, 0.295], 
-            'rmse': [1.0, 1.2, 1.3, 1.35] 
-        }
-        evaluation_df = pd.DataFrame(evaluation_data)
-
-        r2_scores = evaluation_df['r2'].values 
-        rmse_values = evaluation_df['rmse'].values 
+        rmse = evaluation_df['rmse'].values
+        r2 = evaluation_df['r2'].values
         model_names = evaluation_df['model'].tolist()
         x = np.arange(len(model_names))
+        print(rmse, r2, model_names)
 
         fig, axes = plt.subplots(1, 2, figsize=(14, 6))
-        fig.patch.set_facecolor("#F9FAFB")
 
-        bar_width = 0.6
-
-        # Farben aus deiner Palette
-        r2_color = "#3B82F6"     # Akzent-Blau
-        r2_color_hover = "#2563EB"
-        rmse_color = "#B39DDB"   # Lavendel
-
-        # --- R2 Barplot mit abgerundeten Ecken ---
-        for i, val in enumerate(r2_scores):
-            rect = FancyBboxPatch(
-                (x[i] - bar_width/2, 0), bar_width, val,
-                boxstyle="Round,pad=0,rounding_size=0.13", 
-                ec="none",
-                fc=r2_color if i != 1 else r2_color_hover,  # TabPFN etwas dunkler hervorheben
-                alpha=0.95
-            )
-            axes[0].add_patch(rect)
-
-        axes[0].set_xlim(-0.7, len(x)-0.3)
+        # Plot 1: R² Score
+        axes[0].bar(x, r2, width=0.6, color='tab:blue')
         axes[0].set_xticks(x)
-        axes[0].set_xticklabels(model_names, color="#374151", fontsize=12)
-        axes[0].set_ylabel('Score', color="#374151", fontsize=13)
+        axes[0].set_xticklabels(model_names)
+        axes[0].set_ylabel('R² Score')
         axes[0].set_ylim(0, 1)
-        axes[0].set_title('R² Score pro Modell', color="#111827", fontsize=14, weight="bold", pad=12)
-        axes[0].tick_params(axis='y', colors="#6B7280", labelsize=11)
-        axes[0].set_facecolor("#FFFFFF")
-        for spine in axes[0].spines.values():
-            spine.set_edgecolor("#E5E7EB")
+        axes[0].set_title('R² Score pro Modell')
 
-        # --- RMSE Barplot mit abgerundeten Ecken ---
-        for i, val in enumerate(rmse_values):
-            rect = FancyBboxPatch(
-                (x[i] - bar_width/2, 0), bar_width, val,
-                boxstyle="round,pad=0.01,rounding_size=0.05", 
-                ec="none",
-                fc=rmse_color,
-                alpha=0.95
-            )
-            axes[1].add_patch(rect)
-
-        axes[1].set_xlim(-0.7, len(x)-0.3)
+        # Plot 2: 1 - normalized RMSE
+        axes[1].bar(x, rmse, width=0.6, color='tab:orange')
         axes[1].set_xticks(x)
-        axes[1].set_xticklabels(model_names, color="#374151", fontsize=12)
-        axes[1].set_ylabel('RMSE', color="#374151", fontsize=13)
-        axes[1].set_title('RMSE pro Modell', color="#111827", fontsize=14, weight="bold", pad=12)
-        axes[1].tick_params(axis='y', colors="#6B7280", labelsize=11)
-        axes[1].set_facecolor("#FFFFFF")
-        for spine in axes[1].spines.values():
-            spine.set_edgecolor("#E5E7EB")
+        axes[1].set_xticklabels(model_names)
+        axes[1].set_ylabel('1 - normalisierter RMSE')
+        axes[1].set_title('1 - normalisierter RMSE pro Modell')
 
-        plt.tight_layout(rect=[0, 0, 1, 0.98])
-        return fig
+        plt.tight_layout()
+        return plt.gca()
 
     _()
 
-    return (FancyBboxPatch,)
+    return
 
 
 @app.cell
