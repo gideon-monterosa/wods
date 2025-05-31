@@ -16,9 +16,46 @@ def _():
     from PIL import Image
     import seaborn as sns
     from graphviz import Digraph
+    import matplotlib as mpl
     import matplotlib.pyplot as plt
+    from matplotlib.colors import LinearSegmentedColormap
+    from matplotlib import font_manager as fm
 
-    return Digraph, Image, alt, io, itertools, mo, np, os, pd, plt, sns
+    plt.rcParams['font.family'] = 'sans-serif'
+    plt.rcParams['font.sans-serif'] = ['DM Sans'] + plt.rcParams['font.sans-serif']
+
+    plt.rcParams.update({
+        "figure.facecolor": "#F9FAFB",        # Haupt-Hintergrund (Slide)
+        "axes.facecolor": "#FFFFFF",          # Plot-Hintergrund (Container)
+        "axes.edgecolor": "#E5E7EB",          # Rahmen
+        "axes.labelcolor": "#374151",         # Achsentitel (sekundärer Text)
+        "xtick.color": "#6B7280",             # Tick-Labels (tertiärer Text)
+        "ytick.color": "#6B7280",             # Tick-Labels (tertiärer Text)
+        "grid.color": "#E5E7EB",              # Gitternetzlinien (dezent)
+        "text.color": "#111827",              # Haupttext
+        "axes.prop_cycle": plt.cycler(color=["#3B82F6", "#2563EB"]),  # Akzentfarben
+        "axes.grid": True,                    # Grid aktivieren
+        "grid.linestyle": "-",                # Linienstil für Grid
+        "grid.linewidth": 1.0,                # Gitternetzlinien dünn
+        "axes.spines.top": False,             # Obere Rahmenlinie aus
+        "axes.spines.right": False,           # Rechte Rahmenlinie aus
+    })
+    return (
+        Digraph,
+        Image,
+        LinearSegmentedColormap,
+        alt,
+        fm,
+        io,
+        itertools,
+        mo,
+        mpl,
+        np,
+        os,
+        pd,
+        plt,
+        sns,
+    )
 
 
 @app.cell
@@ -95,66 +132,52 @@ def _(os, pd):
 
 
 @app.cell
-def _(df, np, plt):
+def _(LinearSegmentedColormap, df, np, plt):
     def _():
         f1_vals = np.linspace(df["feature_1"].min(), df["feature_1"].max(), 100)
         f2_vals = np.linspace(df["feature_2"].min(), df["feature_2"].max(), 100)
         f1_grid, f2_grid = np.meshgrid(f1_vals, f2_vals)
 
         fixed_f3 = 5
-
         poly_contrib = 0.0003 * (f1_grid * f2_grid * fixed_f3) ** 2
 
         fig = plt.figure(figsize=(10, 6))
         ax = fig.add_subplot(111, projection="3d")
 
-        surface = ax.plot_surface(f1_grid, f2_grid, poly_contrib,
-                                  cmap="viridis", edgecolor='none', alpha=0.9)
+        blues = LinearSegmentedColormap.from_list("blues", [
+            "#3B82F6",
+            "#C4B5FD",
+            "#DC2626",
+        ])
 
-        ax.set_title("Polynomiale Interaktion: (f1 × f2 × f3)² · 0.0003 (f3 fixiert)")
-        ax.set_xlabel("feature_1")
-        ax.set_ylabel("feature_2")
-        ax.set_zlabel("Beitrag")
+        surface = ax.plot_surface(
+            f1_grid, f2_grid, poly_contrib,
+            cmap=blues,
+            edgecolor='none',
+            alpha=0.95
+        )
 
-        fig.colorbar(surface, shrink=0.5, aspect=10, label="Beitrag")
+        fig.patch.set_facecolor("#F9FAFB")
+        ax.set_facecolor("#FFFFFF")
+
+        ax.set_title(
+            "Polynomiale Interaktion: (f1 × f2 × f3)² · 0.0003 (f3 fixiert)",
+            color="#111827", fontsize=15, weight="bold", pad=16
+        )
+        ax.set_xlabel("feature_1", color="#374151", fontsize=12, labelpad=12)
+        ax.set_ylabel("feature_2", color="#374151", fontsize=12, labelpad=12)
+        ax.set_zlabel("Beitrag", color="#374151", fontsize=12, labelpad=12)
+
+        ax.tick_params(axis='x', colors="#6B7280", labelsize=11)
+        ax.tick_params(axis='y', colors="#6B7280", labelsize=11)
+        ax.tick_params(axis='z', colors="#6B7280", labelsize=11)
+
+        cb = fig.colorbar(surface, shrink=0.5, aspect=10, pad=0.1)
+        cb.set_label("Beitrag", color="#374151")
+        cb.ax.yaxis.set_tick_params(color="#6B7280")
+        plt.setp(plt.getp(cb.ax.axes, 'yticklabels'), color="#6B7280")
+
         plt.tight_layout()
-        return plt.gca()
-
-    _()
-    return
-
-
-@app.cell
-def _(df):
-    def _():
-        import numpy as np
-        import matplotlib.pyplot as plt
-
-        features = ["feature_1", "feature_2", "feature_3"]
-        f1 = df["feature_1"].values
-        f2 = df["feature_2"].values
-        f3 = df["feature_3"].values
-        X_poly = np.stack([f1, f2, f3], axis=1)
-        poly_contribution = 0.0003 * (f1 * f2 * f3) ** 2
-
-        fig, axes = plt.subplots(1, 3, figsize=(18, 5), sharey=True)
-
-        for i, ax in enumerate(axes):
-            xi = X_poly[:, i]
-            sc = ax.scatter(xi, poly_contribution, c=poly_contribution, cmap="viridis", alpha=0.7)
-            coef = np.polyfit(xi, poly_contribution, 2)
-            x_fit = np.linspace(xi.min(), xi.max(), 100)
-            y_fit = np.polyval(coef, x_fit)
-            ax.plot(x_fit, y_fit, color="red", linewidth=2, linestyle="--", label="Trendlinie (quadratisch)")
-            ax.set_xlabel(features[i], fontsize=13)
-            if i == 0:
-                ax.set_ylabel("poly_contribution", fontsize=13)
-            ax.set_title(f"{features[i]} vs. poly_contribution")
-            ax.legend()
-
-        cbar = fig.colorbar(sc, ax=axes, orientation='vertical', fraction=0.02, pad=0.03)
-        cbar.set_label("poly_contribution", fontsize=13)
-        plt.suptitle("Polynomiale Beziehung: Feature vs. Beitrag mit quadratischer Trendlinie", fontsize=16)
         return plt.gca()
 
     _()
@@ -181,32 +204,47 @@ def _(mo):
 
 
 @app.cell
-def _(itertools, np, plt):
+def _(LinearSegmentedColormap, np, pd, plt):
     def _():
-        combinations = np.array(list(itertools.product([0, 1], repeat=3)))
-        labels = [f"{a}{b}{c}" for a, b, c in combinations]
-        contrib = ((combinations[:,0] & combinations[:,1] & ~combinations[:,2]) | 
-                   (~combinations[:,0] & ~combinations[:,1] & combinations[:,2])) * 100
+        np.random.seed(42)
+        num_points = 10000
+        X_features = np.random.uniform(-10, 10, size=(num_points, 3))
+        X = np.random.rand(num_points, 9) 
+        X[:, 6:9] = X_features
 
-        plt.bar(labels, contrib)
-        plt.xlabel("Kombinationen X3 X4 X5 (>0 als 1, sonst 0)")
-        plt.ylabel("Logischer Beitrag")
-        plt.title("Logische Interaktion (XOR-ähnlich)")
-        return plt.gca()
+        df = pd.DataFrame({
+            "feature_7": X_features[:, 0],
+            "feature_8": X_features[:, 1],
+            "feature_9": X_features[:, 2]
+        })
 
-    _()
-    return
-
-
-@app.cell
-def _(X, df, np, plt):
-    def _():
         center = np.mean(X[:, 6:9], axis=0)
         distances = np.linalg.norm(X[:, 6:9] - center, axis=1)
-        alpha = -np.log(1 / 99) / distances.max()
-        spatial_contribution = 1 + 150 * np.exp(-alpha * distances)
 
-        fig = plt.figure(figsize=(8, 6))
+        if distances.max() == 0:
+            spatial_contribution = np.full(X.shape[0], 1 + 150.0)
+        else:
+            alpha_decay_param = -np.log(1 / 99) / distances.max()
+            spatial_contribution = 1 + 150 * np.exp(-alpha_decay_param * distances)
+
+        s_c_min = spatial_contribution.min()
+        s_c_max = spatial_contribution.max()
+        if s_c_max == s_c_min:
+            alpha_values = np.ones_like(spatial_contribution) 
+        else:
+            alpha_values = 0.7 * (spatial_contribution - s_c_min) / (s_c_max - s_c_min) + 0.3
+
+        my_cmap = LinearSegmentedColormap.from_list(
+            "lavendel_blau_weiss", [
+                "#FFFFFF",
+                "#E3F2FD",
+                "#90CAF9",
+                "#B39DDB",
+                "#DC2626"
+            ]
+        )
+
+        fig = plt.figure(figsize=(10, 8)) 
         ax = fig.add_subplot(111, projection='3d')
 
         sc = ax.scatter(
@@ -214,30 +252,48 @@ def _(X, df, np, plt):
             df["feature_8"],
             df["feature_9"],
             c=spatial_contribution,
-            cmap="coolwarm",
-            alpha=0.7,
-            vmin=1, vmax=50
+            cmap=my_cmap,
+            alpha=alpha_values,
+            vmin=1, vmax=50,
+            s=10
         )
 
-        ax.set_title("Räumliche Interaktion (skaliert 1–100) – Abstand zum Mittelwertszentrum")
-        ax.set_xlabel("feature_7")
-        ax.set_ylabel("feature_8")
-        ax.set_zlabel("feature_9")
+        # CI/CD Farben für Hintergrund und Achsen
+        fig.patch.set_facecolor("#F9FAFB")
+        ax.set_facecolor("#FFFFFF")
+
+        ax.set_title(
+            "Räumliche Interaktion (skaliert 1–100) – Abstand zum Mittelwertszentrum",
+            color="#111827", fontsize=16, weight="bold", pad=18
+        )
+        ax.set_xlabel("feature_7", color="#374151", fontsize=12, labelpad=10)
+        ax.set_ylabel("feature_8", color="#374151", fontsize=12, labelpad=10)
+        ax.set_zlabel("feature_9", color="#374151", fontsize=12, labelpad=10)
+        ax.tick_params(axis='x', colors="#6B7280", labelsize=11)
+        ax.tick_params(axis='y', colors="#6B7280", labelsize=11)
+        ax.tick_params(axis='z', colors="#6B7280", labelsize=11)
 
         ax.set_xlim([-10, 10])
         ax.set_ylim([-10, 10])
         ax.set_zlim([-10, 10])
 
-        fig.colorbar(sc, label="Beitrag (1–100)")
+        cbar = fig.colorbar(sc, label="Beitrag (Farbskala 1-50)", shrink=0.7, aspect=20, pad=0.02)
+        cbar.set_label("Beitrag (Farbskala 1-50)", color="#374151")
+        cbar.ax.yaxis.set_tick_params(color="#6B7280")
+        plt.setp(plt.getp(cbar.ax.axes, 'yticklabels'), color="#6B7280")
 
-        ax.scatter(*center, color='black', s=80, label="Zentrum (Mittelwert)", marker='x')
-        ax.legend()
+        # Zentrum hervorheben
+        ax.scatter(*center, color="#3B82F6", s=100, label="Zentrum (Mittelwert)", marker='x', depthshade=False)
+        ax.legend(facecolor="#FFFFFF", edgecolor="#E5E7EB", labelcolor="#2563EB")
 
         plt.tight_layout()
+        fig.savefig("spatial_interaction_plot_lavendel_blau_weiss.png")
+        print("Plot saved as spatial_interaction_plot_lavendel_blau_weiss.png")
 
         return plt.gca()
 
     _()
+
     return
 
 
@@ -387,34 +443,81 @@ def _():
 
 
 @app.cell
-def _(df, evaluation_df, np, plt):
+def _(np, pd, plt):
+    from matplotlib.patches import FancyBboxPatch
+
     def _():
-        y = df['target'].values
-        rmse = evaluation_df['rmse'].values
-        norm_rmse = rmse / (y.max() - y.min())
-        neg_norm_rmse = 1 - norm_rmse
-        r2 = evaluation_df['r2'].values
+        evaluation_data = {
+            'model': ['CatBoostRegressor', 'TabPFN', 'RandomForest', 'LinearRegression'],
+            'r2': [0.605, 0.41, 0.30, 0.295], 
+            'rmse': [1.0, 1.2, 1.3, 1.35] 
+        }
+        evaluation_df = pd.DataFrame(evaluation_data)
+
+        r2_scores = evaluation_df['r2'].values 
+        rmse_values = evaluation_df['rmse'].values 
         model_names = evaluation_df['model'].tolist()
         x = np.arange(len(model_names))
 
-        bar_width = 0.4
-        fig, ax = plt.subplots(figsize=(10,6))
+        fig, axes = plt.subplots(1, 2, figsize=(14, 6))
+        fig.patch.set_facecolor("#F9FAFB")
 
-        b1 = ax.bar(x - bar_width/2, r2, width=bar_width, color='tab:blue', label='R² Score')
-        b2 = ax.bar(x + bar_width/2, neg_norm_rmse, width=bar_width, color='tab:orange', label='1 - normalized RMSE')
+        bar_width = 0.6
 
-        ax.set_xticks(x)
-        ax.set_xticklabels(model_names)
-        ax.set_ylabel('Score')
-        ax.set_ylim(0, 1)
-        ax.set_title('R² Score und 1 - normalisierter RMSE pro Modell')
-        ax.legend()
-        plt.tight_layout()
-        return plt.gca()
+        # Farben aus deiner Palette
+        r2_color = "#3B82F6"     # Akzent-Blau
+        r2_color_hover = "#2563EB"
+        rmse_color = "#B39DDB"   # Lavendel
 
+        # --- R2 Barplot mit abgerundeten Ecken ---
+        for i, val in enumerate(r2_scores):
+            rect = FancyBboxPatch(
+                (x[i] - bar_width/2, 0), bar_width, val,
+                boxstyle="Round,pad=0,rounding_size=0.13", 
+                ec="none",
+                fc=r2_color if i != 1 else r2_color_hover,  # TabPFN etwas dunkler hervorheben
+                alpha=0.95
+            )
+            axes[0].add_patch(rect)
+
+        axes[0].set_xlim(-0.7, len(x)-0.3)
+        axes[0].set_xticks(x)
+        axes[0].set_xticklabels(model_names, color="#374151", fontsize=12)
+        axes[0].set_ylabel('Score', color="#374151", fontsize=13)
+        axes[0].set_ylim(0, 1)
+        axes[0].set_title('R² Score pro Modell', color="#111827", fontsize=14, weight="bold", pad=12)
+        axes[0].tick_params(axis='y', colors="#6B7280", labelsize=11)
+        axes[0].set_facecolor("#FFFFFF")
+        for spine in axes[0].spines.values():
+            spine.set_edgecolor("#E5E7EB")
+
+        # --- RMSE Barplot mit abgerundeten Ecken ---
+        for i, val in enumerate(rmse_values):
+            rect = FancyBboxPatch(
+                (x[i] - bar_width/2, 0), bar_width, val,
+                boxstyle="round,pad=0.01,rounding_size=0.05", 
+                ec="none",
+                fc=rmse_color,
+                alpha=0.95
+            )
+            axes[1].add_patch(rect)
+
+        axes[1].set_xlim(-0.7, len(x)-0.3)
+        axes[1].set_xticks(x)
+        axes[1].set_xticklabels(model_names, color="#374151", fontsize=12)
+        axes[1].set_ylabel('RMSE', color="#374151", fontsize=13)
+        axes[1].set_title('RMSE pro Modell', color="#111827", fontsize=14, weight="bold", pad=12)
+        axes[1].tick_params(axis='y', colors="#6B7280", labelsize=11)
+        axes[1].set_facecolor("#FFFFFF")
+        for spine in axes[1].spines.values():
+            spine.set_edgecolor("#E5E7EB")
+
+        plt.tight_layout(rect=[0, 0, 1, 0.98])
+        return fig
 
     _()
-    return
+
+    return (FancyBboxPatch,)
 
 
 @app.cell
@@ -461,66 +564,6 @@ def _(all_evaluations_df, plt, sns):
 def _(mo):
     mo.md(r"""# T2 - Fine Tuning""")
     return
-
-
-@app.cell
-def _(Digraph, Image, io, plt):
-    dot = Digraph('Transformer', format='png')
-    dot.attr(rankdir='LR', fontsize='20')
-
-    dot.node('Input')
-    dot.node('Embedding')
-    dot.node('Positional Encoding')
-    dot.node('Encoder Stack')
-    dot.node('Decoder Stack')
-    dot.node('Output')
-
-    dot.edges([
-        ('Input', 'Embedding'),
-        ('Embedding', 'Positional Encoding'),
-        ('Positional Encoding', 'Encoder Stack'),
-        ('Encoder Stack', 'Decoder Stack'),
-        ('Decoder Stack', 'Output'),
-    ])
-
-    with dot.subgraph(name='cluster_encoder') as c:
-        c.attr(label='Encoder Stack', style='rounded', color='lightgrey')
-        c.node('E_Multi-Head Attention', shape='box')
-        c.node('E_Add & Norm', shape='box')
-        c.node('E_Feed Forward', shape='box')
-        c.node('E_Add & Norm2', shape='box')
-        c.edges([
-            ('E_Multi-Head Attention', 'E_Add & Norm'),
-            ('E_Add & Norm', 'E_Feed Forward'),
-            ('E_Feed Forward', 'E_Add & Norm2')
-        ])
-
-    with dot.subgraph(name='cluster_decoder') as c:
-        c.attr(label='Decoder Stack', style='rounded', color='lightblue')
-        c.node('D_Masked Multi-Head Attention', shape='box')
-        c.node('D_Add & Norm', shape='box')
-        c.node('D_Multi-Head Attention 2', shape='box')
-        c.node('D_Add & Norm2', shape='box')
-        c.node('D_Feed Forward', shape='box')
-        c.node('D_Add & Norm3', shape='box')
-        c.edges([
-            ('D_Masked Multi-Head Attention', 'D_Add & Norm'),
-            ('D_Add & Norm', 'D_Multi-Head Attention 2'),
-            ('D_Multi-Head Attention 2', 'D_Add & Norm2'),
-            ('D_Add & Norm2', 'D_Feed Forward'),
-            ('D_Feed Forward', 'D_Add & Norm3'),
-        ])
-
-    graph_bytes = dot.pipe(format='png')
-    img = Image.open(io.BytesIO(graph_bytes))
-
-    plt.figure(figsize=(10, 7))
-    plt.imshow(img)
-    plt.axis('off')
-    plt.title("TabPFN Architektur (Graphviz)")
-    plt.tight_layout()
-    plt.show()
-    return c, dot, graph_bytes, img
 
 
 if __name__ == "__main__":
