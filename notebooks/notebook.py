@@ -161,7 +161,7 @@ def _(LinearSegmentedColormap, df, np, plt):
         ax.set_facecolor("#FFFFFF")
 
         ax.set_title(
-            "Polynomiale Interaktion: (f1 × f2 × f3)² · 0.0003 (f3 fixiert)",
+            "Polynomiale Interaktion",
             color="#111827", fontsize=15, weight="bold", pad=16
         )
         ax.set_xlabel("feature_1", color="#374151", fontsize=12, labelpad=12)
@@ -189,8 +189,8 @@ def _(mo):
     mo.md(
         r"""
         $$
-        a = \text{feature}_3 > 0 \\
-        b = \text{feature}_3 > 0 \\
+        a = \text{feature}_1 > 0 \\
+        b = \text{feature}_2 > 0 \\
         c = \text{feature}_3 > 0 \\
         \text{contrib} =
         \begin{cases}
@@ -263,7 +263,7 @@ def _(LinearSegmentedColormap, np, pd, plt):
         ax.set_facecolor("#FFFFFF")
 
         ax.set_title(
-            "Räumliche Interaktion (skaliert 1–100) – Abstand zum Mittelwertszentrum",
+            "Räumliche Interaktion",
             color="#111827", fontsize=16, weight="bold", pad=18
         )
         ax.set_xlabel("feature_7", color="#374151", fontsize=12, labelpad=10)
@@ -283,11 +283,10 @@ def _(LinearSegmentedColormap, np, pd, plt):
         plt.setp(plt.getp(cbar.ax.axes, 'yticklabels'), color="#6B7280")
 
         # Zentrum hervorheben
-        ax.scatter(*center, color="#3B82F6", s=100, label="Zentrum (Mittelwert)", marker='x', depthshade=False)
+        ax.scatter(*center, color="#00F700", s=100, label="Zentrum (Mittelwert)", marker='x', depthshade=False)
         ax.legend(facecolor="#FFFFFF", edgecolor="#E5E7EB", labelcolor="#2563EB")
 
         plt.tight_layout()
-        fig.savefig("spatial_interaction_plot_lavendel_blau_weiss.png")
         print("Plot saved as spatial_interaction_plot_lavendel_blau_weiss.png")
 
         return plt.gca()
@@ -305,9 +304,10 @@ def _(Digraph, Image, io, np, plt):
 
         decision_style = {'shape': 'ellipse', 'style': 'filled', 'fillcolor': '#dbeafe', 'fontsize': '14', 'fontname': 'Arial', 'color': '#2563eb'}
         leaf_styles = {
-            'high':   {'shape': 'box', 'style': 'filled,bold', 'fillcolor': '#bbf7d0', 'fontsize': '14', 'fontname': 'Arial', 'color': '#16a34a'},
-            'mid':    {'shape': 'box', 'style': 'filled,bold', 'fillcolor': '#fef9c3', 'fontsize': '14', 'fontname': 'Arial', 'color': '#ca8a04'},
-            'neg':    {'shape': 'box', 'style': 'filled,bold', 'fillcolor': '#fecaca', 'fontsize': '14', 'fontname': 'Arial', 'color': '#dc2626'},
+            'high':   {'shape': 'box', 'style': 'filled,bold', 'fillcolor': '#40A99B', 'fontsize': '14', 'fontname': 'Arial', 'color': '#40A99B', 'fontcolor': 'white'},
+            'mid':    {'shape': 'box', 'style': 'filled,bold', 'fillcolor': '#8FD76B', 'fontsize': '14', 'fontname': 'Arial', 'color': '#8FD76B'},
+            'one':    {'shape': 'box', 'style': 'filled,bold', 'fillcolor': '#498E9F', 'fontsize': '14', 'fontname': 'Arial', 'color': '#498E9F', 'fontcolor': 'white'},
+            'neg':    {'shape': 'box', 'style': 'filled,bold', 'fillcolor': '#5D6099', 'fontsize': '14', 'fontname': 'Arial', 'color': '#FFFFFF', 'fontcolor': 'white'},
             'zero':   {'shape': 'box', 'style': 'filled',      'fillcolor': '#e5e7eb', 'fontsize': '14', 'fontname': 'Arial', 'color': '#6b7280'},
         }
 
@@ -320,7 +320,7 @@ def _(Digraph, Image, io, np, plt):
         dot.node('E', '40', **leaf_styles['high'])
         dot.node('F', '20', **leaf_styles['mid'])
         dot.node('G', '-25', **leaf_styles['neg'])
-        dot.node('H', '1', **leaf_styles['mid'])
+        dot.node('H', '1', **leaf_styles['one'])
         dot.node('I', '0', **leaf_styles['zero'])
 
         dot.edge('A', 'B', 'Ja', color='#22c55e', fontcolor='#22c55e', penwidth='2', fontsize='13')
@@ -398,7 +398,7 @@ def _(X, np, plt):
 
         cbar = fig.colorbar(sc, ax=axes, orientation='vertical', fraction=0.02, pad=0.03)
         cbar.set_label("linear_contribution (Farbcodierung)", fontsize=13)
-        plt.suptitle("Lineare Beziehung: Feature vs. Beitrag mit Trendlinie und Farblegende", fontsize=16)
+        plt.suptitle("Lineare Beziehung", fontsize=16)
         return plt.gca()
 
     _()
@@ -520,6 +520,38 @@ def _(all_evaluations_df, plt, sns):
 @app.cell
 def _(mo):
     mo.md(r"""# T2 - Fine Tuning""")
+    return
+
+
+@app.cell
+def _(np, plt):
+    def _():
+        models = ["TabPFN", "TabPFN + Adapter"]
+        test_accuracy = [0.769, 0.769]
+
+        epochs = np.arange(1, 6)
+        loss = [0.3147, 0.3002, 0.2718, 0.2190, 0.1827]
+
+        fig, axes = plt.subplots(1, 2, figsize=(12, 5))
+
+        axes[0].bar(models, test_accuracy, color=["#8C52FF", "#FF7043"], width=0.6)
+        axes[0].set_ylim(0, 1)
+        axes[0].set_ylabel("Test Accuracy")
+        axes[0].set_title("Test Accuracy Vergleich")
+
+        for i, v in enumerate(test_accuracy):
+            axes[0].text(i, v + 0.02, f"{v:.3f}", ha='center', va='bottom', fontweight='bold')
+
+        axes[1].plot(epochs, loss, marker='o', color="#8C52FF")
+        axes[1].set_xlabel("Epoch")
+        axes[1].set_ylabel("Loss")
+        axes[1].set_title("Trainings-Loss pro Epoche")
+        axes[1].grid(True)
+
+        plt.tight_layout()
+        return plt.gca()
+
+    _()
     return
 
 
